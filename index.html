@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#F97316">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Re:Deum">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="icon" href="/icon-192.png">
+<title>Re:Deum — 침대에서 헬스장까지</title>
+<style>
+:root{
+  --org:#F97316; --orgD:#E05E05; --orgT:#C2570C;
+  --peach:#FFF4EA; --peach2:#FFE7D3; --peach3:#FFDDBF;
+  --ink:#1C1C1A; --mut:#8A8A86; --faint:#C4C4BE;
+  --line:#F0EDE8; --bg:#FAFAF8; --card:#FFFFFF;
+  --ok:#1D9E75;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Segoe UI",sans-serif;
+  background:var(--bg); color:var(--ink); font-size:15px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+#app{max-width:420px;margin:0 auto;min-height:100vh;background:var(--card);
+  display:flex;flex-direction:column;position:relative;}
+.page{flex:1;padding:18px 18px 96px;overflow-y:auto}
+button{font-family:inherit;border:none;cursor:pointer;background:none;font-size:15px}
+input,select{font-family:inherit;font-size:16px}
+
+/* ── 공통 컴포넌트 ── */
+.pill{width:100%;padding:16px;border-radius:99px;font-size:16px;font-weight:600;
+  background:var(--org);color:#fff;transition:transform .1s}
+.pill:active{transform:scale(.97)}
+.pill.outline{background:#fff;color:var(--org);border:1.5px solid var(--org)}
+.pill.ghost{background:var(--peach);color:var(--orgT)}
+.pill:disabled{background:var(--line);color:var(--faint)}
+.linkbtn{color:var(--faint);font-size:13px;text-decoration:underline;text-underline-offset:3px;padding:10px}
+.chip{padding:10px 0;width:40px;border-radius:99px;background:var(--bg);color:var(--mut);
+  font-weight:600;font-size:14px;text-align:center;border:1.5px solid transparent}
+.chip.on{background:var(--org);color:#fff}
+.card{background:var(--bg);border-radius:20px;padding:18px}
+.icircle{width:34px;height:34px;border-radius:50%;background:var(--peach);
+  display:inline-flex;align-items:center;justify-content:center;flex:none}
+.eyebrow{font-size:12px;font-weight:600;color:var(--orgT);letter-spacing:.02em}
+.mutetext{font-size:13px;color:var(--mut)}
+.faint{color:var(--faint)}
+h1{font-size:22px;font-weight:700;letter-spacing:-.3px}
+h2{font-size:17px;font-weight:700}
+.bignum{font-size:44px;font-weight:800;letter-spacing:-1.5px;line-height:1.1;font-variant-numeric:tabular-nums}
+
+/* ── 헤더/네비 ── */
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:16px 18px 4px}
+.logo{font-size:15px;font-weight:800;letter-spacing:-.2px}
+.logo span{color:var(--org)}
+.nav{position:sticky;bottom:0;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);
+  border-top:.5px solid var(--line);display:flex;padding:8px 0 calc(10px + env(safe-area-inset-bottom))}
+.nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-size:11px;color:var(--faint);font-weight:600}
+.nav button.on{color:var(--org)}
+.nav svg{width:22px;height:22px}
+
+/* ── 오늘 카드 상태 ── */
+.today{border-radius:24px;padding:22px 20px;transition:background .5s}
+.today.calm{background:var(--bg)}
+.today.warm{background:var(--peach)}
+.today.hot{background:linear-gradient(135deg,var(--peach) 0%,var(--peach3) 100%)}
+.today.flow{background:linear-gradient(135deg,var(--peach) 0%,var(--peach2) 100%)}
+.today.done{background:#EAF7F1}
+.today.rest{background:var(--bg)}
+.progress{height:6px;background:#fff;border-radius:99px;overflow:hidden;margin-top:14px}
+.progress i{display:block;height:100%;background:var(--org);border-radius:99px;transition:width 1s linear}
+
+/* ── 배너 ── */
+.banner{position:sticky;top:0;z-index:50;margin:0 14px;background:var(--ink);color:#fff;
+  border-radius:0 0 16px 16px;padding:13px 16px;font-size:13.5px;font-weight:600;
+  display:flex;gap:10px;align-items:center;animation:drop .35s ease}
+@keyframes drop{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* ── 축하 ── */
+.celebrate{text-align:center;padding:26px 8px 10px;animation:pop .45s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+.celebrate .shoebig{width:74px;height:auto;animation:bounce 1.4s ease infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+/* ── 리포트 ── */
+.stamps{display:flex;justify-content:space-between;margin-top:14px}
+.stamp{display:flex;flex-direction:column;align-items:center;gap:6px;width:13%}
+.stamp .day{font-size:11px;font-weight:600;color:var(--faint)}
+.stamp .slot{width:100%;aspect-ratio:1;border-radius:14px;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+.stamp .slot.hit{background:var(--peach)}
+.stamp svg{width:70%;height:auto}
+.bars{display:flex;align-items:flex-end;gap:12px;height:120px;margin-top:16px;padding:0 4px}
+.bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;justify-content:flex-end;height:100%}
+.bar i{display:block;width:100%;max-width:44px;background:var(--org);border-radius:10px 10px 4px 4px;min-height:4px;transition:height .5s}
+.bar i.zero{background:var(--line)}
+.bar b{font-size:13px;font-weight:700}
+.bar span{font-size:11px;color:var(--faint);font-weight:600}
+
+/* ── 온보딩 ── */
+.obcard{border:1.5px solid var(--line);border-radius:18px;padding:16px;margin-bottom:10px}
+.obcard.on{border-color:var(--org);background:var(--peach)}
+.field{margin-bottom:18px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--mut);margin-bottom:8px}
+.timesel{display:flex;gap:8px;align-items:center}
+.timesel select{flex:1;padding:13px;border:1.5px solid var(--line);border-radius:14px;background:#fff;appearance:none;text-align:center;font-weight:600}
+.numin{width:70px;padding:12px;border:1.5px solid var(--line);border-radius:14px;text-align:center;font-weight:700;font-size:18px}
+.txtin{width:100%;padding:13px 14px;border:1.5px solid var(--line);border-radius:14px}
+.setrow{display:flex;justify-content:space-between;align-items:center;padding:15px 2px;border-bottom:.5px solid var(--line);font-weight:600}
+.setrow small{display:block;font-weight:400;color:var(--mut);font-size:12.5px;margin-top:2px}
+.dbg{background:var(--bg);border-radius:16px;padding:14px;margin-top:18px}
+.dbg button{display:block;width:100%;text-align:left;padding:10px 6px;font-size:13.5px;color:var(--mut);border-bottom:.5px solid var(--line)}
+.dbg button:last-child{border:none}
+.photo-thumb{width:100%;border-radius:16px;margin-top:12px;display:block}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ═══════════════ 저장소 어댑터 (claude 아티팩트 ↔ 실배포 겸용) ═══════════════ */
+const store = {
+  async get(k){
+    if (window.storage) { try{ const r = await window.storage.get(k); return r ? JSON.parse(r.value) : null; }catch(e){ return null; } }
+    try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; }catch(e){ return null; }
+  },
+  async set(k,v){
+    const s = JSON.stringify(v);
+    if (window.storage) { try{ await window.storage.set(k,s); return; }catch(e){} }
+    try{ localStorage.setItem(k,s); }catch(e){}
+  }
+};
+
+/* ═══════════════ 상태 ═══════════════ */
+let DB = {
+  onboarded:false,
+  goal:{ type:'routine', text:'주 3회가 자연스러운 나', targetDate:null },
+  routine:{ days:[1,3,5], hour:19, minute:30, minWeek:1, gymName:'', gymLat:null, gymLng:null },
+  missions:{},   // 'YYYY-MM-DD' → {status, departedAt, arrivedAt, photo, dLat,dLng, moved, nudges, movedTo}
+  extras:{}      // 'YYYY-MM-DD' → true (재설정으로 추가된 목표일)
+};
+let UI = { view:'home', obStep:1, ob:null, photoStage:false, rescheduleOpen:false,
+  debugMin:0, demoArrive:false, banner:null, notif:{}, celebrating:false };
+
+const DAYS = ['일','월','화','수','목','금','토'];
+const save = () => store.set('redeum:v1', DB);
+
+/* ═══════════════ 시간/날짜 유틸 ═══════════════ */
+const now  = () => new Date(Date.now() + UI.debugMin*60000);
+const key  = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const tKey = () => key(now());
+function targetOf(d){ const t=new Date(d); t.setHours(DB.routine.hour, DB.routine.minute,0,0); return t; }
+function isTarget(dateKey, d){ return DB.routine.days.includes(d.getDay()) || !!DB.extras[dateKey]; }
+function mondayOf(d){ const x=new Date(d); const wd=(x.getDay()+6)%7; x.setDate(x.getDate()-wd); x.setHours(0,0,0,0); return x; }
+const pad2 = n => String(n).padStart(2,'0');
+
+/* ═══════════════ 위치 유틸 ═══════════════ */
+function getPos(){ return new Promise((res,rej)=>{
+  if(!navigator.geolocation) return rej(new Error('nogeo'));
+  navigator.geolocation.getCurrentPosition(p=>res(p.coords), e=>rej(e),
+    {enableHighAccuracy:true, timeout:12000, maximumAge:0});
+});}
+function dist(a1,o1,a2,o2){ const R=6371000,r=x=>x*Math.PI/180;
+  const dA=r(a2-a1), dO=r(o2-o1);
+  const h=Math.sin(dA/2)**2 + Math.cos(r(a1))*Math.cos(r(a2))*Math.sin(dO/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h)); }
+
+/* ═══════════════ 알림 ═══════════════ */
+function showBanner(msg){ UI.banner=msg; render();
+  setTimeout(()=>{ if(UI.banner===msg){UI.banner=null; render();} }, 7000); }
+function pushNotify(title,body){
+  if('Notification' in window && Notification.permission==='granted'){
+    try{ new Notification(title,{body}); }catch(e){}
+  }
+}
+function askNotif(){ if('Notification' in window && Notification.permission==='default')
+  Notification.requestPermission().then(()=>render()); }
+
+/* ═══════════════ 신발 SVG ═══════════════ */
+function shoe(fill,stroke){
+  return `<svg viewBox="0 0 48 34" fill="${fill}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round">
+    <path d="M4 22 C4 15 9 13 13 13 L17 13 C21 13 23 8 27 8 C29 8 30.5 10 33 12 C37 14.5 44 16 44 21 L44 24 C44 25.2 43.2 26 42 26 L6 26 C4.8 26 4 25.2 4 24 Z"/>
+    <path d="M4 29 L44 29" stroke-linecap="round"/>
+    <path d="M20 13 L23 17 M25 11 L28 15" stroke-linecap="round" fill="none"/>
+  </svg>`;
+}
+const shoeFill  = shoe('#F97316','#E05E05');
+const shoeGhost = shoe('none','#D6D3CC');
+const shoeFuture= shoe('none','#EAD9C6');
+
+/* ═══════════════ 오늘 카드 상태 계산 ═══════════════ */
+function cardState(){
+  const d=now(), tk=tKey(), m=DB.missions[tk];
+  if(m && m.status==='arrived') return {s:'done', m};
+  if(m && m.status==='rescheduled') return {s:'moved', m};
+  if(!isTarget(tk,d)) return {s:'rest'};
+  const tgt=targetOf(d), rem=(tgt-d)/60000; // 분
+  if(m && m.status==='departed') return {s: m.moved?'movedOk':'moving', m, tgt, rem};
+  if(rem>30)  return {s:'calm', tgt, rem};
+  if(rem>20)  return {s:'warm', tgt, rem};
+  if(rem>-90) return {s:'hot',  tgt, rem};
+  return {s:'missed', tgt, rem};
+}
+
+/* ═══════════════ 스트릭/리포트 계산 ═══════════════ */
+function arrivalsInWeek(mon){
+  let c=0; for(let i=0;i<7;i++){ const d=new Date(mon); d.setDate(d.getDate()+i);
+    const mm=DB.missions[key(d)]; if(mm&&mm.status==='arrived') c++; } return c;
+}
+function streakWeeks(){
+  const minW=Math.max(1, DB.routine.minWeek||1);
+  let mon=mondayOf(now()), n=0;
+  if(arrivalsInWeek(mon)>=minW) n=1;           // 이번 주 이미 달성
+  let cur=new Date(mon);
+  while(true){ cur.setDate(cur.getDate()-7);
+    if(arrivalsInWeek(cur)>=minW) n++; else break;
+    if(n>520) break; }
+  return n;
+}
+function weekRow(){
+  const mon=mondayOf(now()), tk=tKey(), rows=[];
+  for(let i=0;i<7;i++){ const d=new Date(mon); d.setDate(d.getDate()+i);
+    const k2=key(d), m=DB.missions[k2], tg=isTarget(k2,d);
+    const past = k2<tk, today=k2===tk;
+    let kind='dot';
+    if(m&&m.status==='arrived') kind='hit';
+    else if(tg&&(past||(today&&cardState().s==='missed'))) kind='miss';
+    else if(tg) kind='future';
+    rows.push({label:DAYS[d.getDay()], kind, today});
+  } return rows;
+}
+function monthBars(){
+  const d=now(), y=d.getFullYear(), mo=d.getMonth();
+  const last=new Date(y,mo+1,0).getDate();
+  const bars=[]; let w=1;
+  for(let s=1;s<=last;s+=7){ const e=Math.min(s+6,last); let c=0;
+    for(let dd=s;dd<=e;dd++){ const m=DB.missions[`${y}-${pad2(mo+1)}-${pad2(dd)}`];
+      if(m&&m.status==='arrived') c++; }
+    bars.push({w:w++, c}); }
+  return bars;
+}
+
+/* ═══════════════ 액션 ═══════════════ */
+async function startShoe(){ UI.photoStage=true; render(); }
+async function departed(photoData){
+  const tk=tKey();
+  const m = DB.missions[tk] = DB.missions[tk]||{};
+  m.status='departed'; m.departedAt=now().getTime(); m.nudges=0;
+  if(photoData) m.photo=photoData;
+  try{ const c=await getPos(); m.dLat=c.latitude; m.dLng=c.longitude; }catch(e){}
+  UI.photoStage=false; save(); render();
+}
+function onPhotoFile(input){
+  const f=input.files&&input.files[0]; if(!f){ return; }
+  const rd=new FileReader();
+  rd.onload=()=>{ const img=new Image();
+    img.onload=()=>{ const cv=document.createElement('canvas');
+      const w=280, h=Math.round(img.height*w/img.width);
+      cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0,w,h);
+      departed(cv.toDataURL('image/jpeg',0.72)); };
+    img.src=rd.result; };
+  rd.readAsDataURL(f);
+}
+async function checkMove(){
+  const m=DB.missions[tKey()]; if(!m) return;
+  try{ const c=await getPos();
+    if(m.dLat==null){ m.dLat=c.latitude; m.dLng=c.longitude; save(); render(); return; }
+    const dv=dist(m.dLat,m.dLng,c.latitude,c.longitude);
+    if(dv>100 || UI.demoArrive){ m.moved=true; showBanner('잘 가고 있어요 👍 이 흐름 그대로!'); }
+    else { m.nudges=(m.nudges||0)+1; showBanner('아직이신가요? 문 앞까지 한 걸음만.'); }
+    save(); render();
+  }catch(e){ showBanner('위치를 확인할 수 없어요. 위치 권한을 확인해주세요.'); }
+}
+async function checkArrive(registerHere){
+  const m=DB.missions[tKey()]; if(!m) return;
+  try{
+    if(UI.demoArrive){ return arrive(m); }
+    const c=await getPos();
+    if(registerHere){ DB.routine.gymLat=c.latitude; DB.routine.gymLng=c.longitude;
+      if(!DB.routine.gymName) DB.routine.gymName='내 운동 장소'; return arrive(m); }
+    if(DB.routine.gymLat==null){ render(); return; }
+    const dv=dist(DB.routine.gymLat,DB.routine.gymLng,c.latitude,c.longitude);
+    if(dv<=200) arrive(m);
+    else showBanner(`아직 ${Math.round(dv)}m 남았어요. 거의 다 왔어요!`);
+  }catch(e){ showBanner('위치를 확인할 수 없어요. 위치 권한을 확인해주세요.'); }
+}
+function arrive(m){ m.status='arrived'; m.arrivedAt=now().getTime();
+  UI.celebrating=true; save(); render();
+  setTimeout(()=>{ UI.celebrating=false; render(); }, 3600); }
+function reschedule(toKey){
+  const tk=tKey(); const m=DB.missions[tk]=DB.missions[tk]||{};
+  m.status='rescheduled';
+  if(toKey){ DB.extras[toKey]=true; m.movedTo=toKey; }
+  UI.rescheduleOpen=false; save(); render();
+}
+function addTodayTarget(){ DB.extras[tKey()]=true; save(); render(); }
+
+/* ═══════════════ 리마인드 체크(틱) ═══════════════ */
+function tick(){
+  const st=cardState(), tk=tKey();
+  if((st.s==='warm'||st.s==='hot') && st.rem<=30 && UI.notif['30']!==tk){
+    UI.notif['30']=tk;
+    showBanner('30분 남았어요. 슬슬 준비해볼까요?');
+    pushNotify('Re:Deum','30분 남았어요. 슬슬 준비해볼까요?');
+  }
+  if(st.s==='hot' && st.rem<=20 && UI.notif['20']!==tk){
+    UI.notif['20']=tk;
+    showBanner('20분 전이에요. 신발 신을 시간!');
+    pushNotify('Re:Deum','20분 전이에요. 신발 신을 시간!');
+  }
+  const el=document.getElementById('cd'); // 카운트다운만 부분 갱신
+  if(el){ const st2=cardState();
+    if(st2.rem!=null){ el.textContent=fmtRem(st2.rem); }
+  }
+  const stEl=document.getElementById('stateWrap');
+  if(stEl && stEl.dataset.s!==st.s) render();
+}
+function fmtRem(rem){
+  if(rem<=0) return '지금';
+  const h=Math.floor(rem/60), m2=Math.ceil(rem%60);
+  return h>0 ? `${h}시간 ${m2}분` : `${m2}분`;
+}
+
+/* ═══════════════ 렌더 ═══════════════ */
+function render(){
+  const app=document.getElementById('app');
+  if(!DB.onboarded){ app.innerHTML=viewOnboard(); bindOnboard(); return; }
+  let body='';
+  if(UI.view==='home') body=viewHome();
+  else if(UI.view==='report') body=viewReport();
+  else body=viewSettings();
+  app.innerHTML = (UI.banner?`<div class="banner">🔔 ${UI.banner}</div>`:'')
+    + `<div class="topbar"><div class="logo">Re<span>:</span>Deum</div>
+       <div class="icircle" onclick="askNotif()">${bellSvg()}</div></div>`
+    + `<div class="page">${body}</div>` + navHtml();
+}
+function bellSvg(){ const on='Notification' in window && Notification.permission==='granted';
+  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${on?'#F97316':'#C4C4BE'}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>`; }
+function navHtml(){
+  const it=(v,label,icon)=>`<button class="${UI.view===v?'on':''}" onclick="go('${v}')">${icon}<span>${label}</span></button>`;
+  return `<div class="nav">
+    ${it('home','홈',`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>`)}
+    ${it('report','리포트',`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-6"/><path d="M22 20H2"/></svg>`)}
+    ${it('settings','설정',`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2Z"/></svg>`)}
+  </div>`;
+}
+function go(v){ UI.view=v; UI.rescheduleOpen=false; render(); }
+
+/* ── 홈 ── */
+function viewHome(){
+  const d=now(), st=cardState();
+  const dday = DB.goal.targetDate ? Math.max(0, Math.ceil((new Date(DB.goal.targetDate)-d)/86400000)) : null;
+  const sw=streakWeeks();
+  return `
+    <p class="mutetext" style="margin-bottom:2px">${d.getMonth()+1}월 ${d.getDate()}일 ${DAYS[d.getDay()]}요일</p>
+    <h1 style="margin-bottom:16px">오늘도 나가볼까요</h1>
+    <div id="stateWrap" data-s="${st.s}">${todayCard(st)}</div>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <div class="card" style="flex:1;text-align:center">
+        <p class="eyebrow">루틴</p>
+        <p class="bignum" style="font-size:26px;margin-top:4px">${sw>0?sw+'주째':'이번 주'}</p>
+        <p class="mutetext" style="font-size:12px">${sw>0?'이어지는 중':'부터 시작'}</p>
+      </div>
+      <div class="card" style="flex:1;text-align:center">
+        <p class="eyebrow">목표</p>
+        <p class="bignum" style="font-size:26px;margin-top:4px">${dday!=null?'D-'+dday:'—'}</p>
+        <p class="mutetext" style="font-size:12px">${esc(DB.goal.text)}</p>
+      </div>
+    </div>`;
+}
+function esc(s){ return String(s||'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+
+function todayCard(st){
+  const R=DB.routine, tstr=`${pad2(R.hour)}:${pad2(R.minute)}`;
+  const rescheduleUI = ()=>{
+    const d=now(), mon=mondayOf(d), chips=[];
+    for(let i=0;i<7;i++){ const dd=new Date(mon); dd.setDate(dd.getDate()+i);
+      const k2=key(dd); if(k2<=tKey()) continue; if(isTarget(k2,dd)) continue;
+      chips.push(`<button class="chip" onclick="reschedule('${k2}')">${DAYS[dd.getDay()]}</button>`); }
+    return `<div style="margin-top:14px">
+      <p class="mutetext" style="margin-bottom:10px">이번 주, 대신 갈 요일을 하나 골라볼까요?</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">${chips.join('')||'<span class="mutetext">이번 주 남은 요일이 없어요</span>'}</div>
+      <button class="linkbtn" onclick="reschedule(null)" style="margin-top:6px">이번 주는 쉬어갈게요</button>
+    </div>`;
+  };
+
+  /* 도착 완료 */
+  if(st.s==='done'){
+    const m=st.m;
+    if(UI.celebrating) return `<div class="today done"><div class="celebrate">
+      <div class="shoebig">${shoeFill}</div>
+      <h1 style="margin-top:10px;color:var(--ok)">왔다!</h1>
+      <p class="mutetext" style="margin-top:6px">오늘의 가장 어려운 일은 끝났어요.</p></div></div>`;
+    return `<div class="today done">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="icircle" style="background:#D7F0E5">${shoe('#1D9E75','#0F6E56').replace('viewBox','width="18" viewBox')}</span>
+        <div><b>오늘 도착 완료</b><p class="mutetext" style="font-size:12.5px">${new Date(m.arrivedAt).getHours()}시 ${pad2(new Date(m.arrivedAt).getMinutes())}분 체크인 · 내일 봐요</p></div>
+      </div>
+      ${m.photo?`<img class="photo-thumb" src="${m.photo}" alt="오늘의 신발">`:''}</div>`;
+  }
+  /* 재설정됨 */
+  if(st.s==='moved'){
+    const to=st.m.movedTo? `${new Date(st.m.movedTo).getMonth()+1}/${new Date(st.m.movedTo).getDate()}(${DAYS[new Date(st.m.movedTo).getDay()]})` : '다음 기회';
+    return `<div class="today rest">
+      <p class="eyebrow">오늘의 운동</p>
+      <h2 style="margin-top:6px">다음 출발로 옮겼어요</h2>
+      <p class="mutetext" style="margin-top:4px">${st.m.movedTo?`${to}에 다시 만나요. 루틴은 계속 이어지는 중이에요.`:'이번 주는 여기까지도 괜찮아요.'}</p></div>`;
+  }
+  /* 쉬는 날 */
+  if(st.s==='rest'){
+    return `<div class="today rest">
+      <p class="eyebrow">오늘의 운동</p>
+      <h2 style="margin-top:6px">오늘은 쉬는 날이에요</h2>
+      <p class="mutetext" style="margin-top:4px">잘 쉬는 것도 루틴의 일부예요.</p>
+      <button class="linkbtn" onclick="addTodayTarget()" style="padding-left:0">그래도 오늘 가볼래요</button></div>`;
+  }
+  /* 놓친 시간 → 재설정 */
+  if(st.s==='missed'){
+    return `<div class="today warm">
+      <p class="eyebrow">오늘의 운동 · ${tstr}</p>
+      <h2 style="margin-top:6px">오늘은 여기까지도 괜찮아요</h2>
+      <p class="mutetext" style="margin-top:4px">못 간 게 아니라, 옮기는 거예요.</p>
+      ${rescheduleUI()}</div>`;
+  }
+  /* 사진 스테이지 */
+  if(UI.photoStage){
+    return `<div class="today flow">
+      <p class="eyebrow">출발 미션 👟</p>
+      <h2 style="margin-top:6px">신발 신는 중, 한 장 남겨볼까요?</h2>
+      <p class="mutetext" style="margin-top:4px">가벼운 인증이 꾸준한 움직임의 시작이 돼요.</p>
+      <label class="pill" style="display:block;text-align:center;margin-top:16px">📷 신발 사진 찍기
+        <input type="file" accept="image/*" capture="environment" class="hidden" onchange="onPhotoFile(this)"></label>
+      <button class="linkbtn" style="display:block;margin:6px auto 0" onclick="departed(null)">안 찍고 바로 출발할게요</button></div>`;
+  }
+  /* 이동 확인 */
+  if(st.s==='moving'||st.s==='movedOk'){
+    const m=st.m, elapsed=Math.floor((now().getTime()-m.departedAt)/60000);
+    const gymOk = DB.routine.gymLat!=null;
+    return `<div class="today flow">
+      <p class="eyebrow">${st.s==='movedOk'?'가는 중 👍':'이동 확인 중'}</p>
+      <h2 style="margin-top:6px">${st.s==='movedOk'?'잘 가고 있어요!':'지금부터 조금씩, 문 열고 한 걸음'}</h2>
+      <p class="mutetext" style="margin-top:4px">출발한 지 ${elapsed}분 · ${st.s==='movedOk'?'도착하면 체크인해요':'5분쯤 뒤에 위치를 확인해볼게요'}</p>
+      ${m.photo?`<img class="photo-thumb" src="${m.photo}" alt="신발 인증">`:''}
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">
+        ${st.s!=='movedOk'?`<button class="pill outline" onclick="checkMove()">지금 위치 확인하기</button>`:''}
+        ${gymOk
+          ? `<button class="pill" onclick="checkArrive(false)">도착 체크인</button>`
+          : `<button class="pill" onclick="checkArrive(true)">여기를 운동 장소로 등록하고 체크인</button>`}
+      </div>
+      <button class="linkbtn" style="display:block;margin:4px auto 0" onclick="UI.rescheduleOpen=!UI.rescheduleOpen;render()">오늘 말고 다른 날 갈게요</button>
+      ${UI.rescheduleOpen?rescheduleUI():''}</div>`;
+  }
+  /* 대기 3단계: calm / warm / hot */
+  const prog = Math.min(100, Math.max(4, 100 - (st.rem/120)*100));
+  const head = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+    <span class="icircle" style="width:28px;height:28px">${shoe('#F97316','#E05E05').replace('viewBox','width="15" viewBox')}</span>
+    <span class="eyebrow">오늘의 운동${DB.routine.gymName?' · '+esc(DB.routine.gymName):''}</span></div>`;
+  const timeBlock = `<div style="display:flex;align-items:baseline;gap:8px">
+    <span class="bignum">${tstr}</span>
+    <span class="mutetext">까지 <b id="cd" style="color:var(--ink)">${fmtRem(st.rem)}</b> 남음</span></div>
+    <div class="progress"><i style="width:${prog}%"></i></div>`;
+  if(st.s==='calm') return `<div class="today calm">${head}${timeBlock}
+    <p class="mutetext" style="margin-top:12px">시간 되면 알려드릴게요. 편하게 계세요.</p></div>`;
+  if(st.s==='warm') return `<div class="today warm">${head}${timeBlock}
+    <p style="margin-top:14px;font-weight:600">슬슬 준비해볼까요?</p>
+    <button class="pill outline" style="margin-top:10px" onclick="startShoe()">신발 신으러 가기</button></div>`;
+  return `<div class="today hot">${head}${timeBlock}
+    <p style="margin-top:14px;font-weight:700;font-size:16px">신발 신을 시간이에요</p>
+    <button class="pill" style="margin-top:10px" onclick="startShoe()">👟 신발 신기</button></div>`;
+}
+
+/* ── 리포트 ── */
+function viewReport(){
+  const rows=weekRow(), hit=rows.filter(r=>r.kind==='hit').length;
+  const sw=streakWeeks(), bars=monthBars(), mx=Math.max(1,...bars.map(b=>b.c));
+  const d=now();
+  return `
+    <h1 style="margin-bottom:4px">리포트</h1>
+    <p class="mutetext" style="margin-bottom:18px">완벽하지 않아도 괜찮아요. 끊기지만 않으면 돼요.</p>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <h2>이번 주 도장</h2>
+        <span class="mutetext">${hit}회 도착 · 최소 목표 주 ${DB.routine.minWeek}회</span>
+      </div>
+      <div class="stamps">
+        ${rows.map(r=>`<div class="stamp">
+          <div class="slot ${r.kind==='hit'?'hit':''}">
+            ${r.kind==='hit'?shoeFill:r.kind==='miss'?shoeGhost:r.kind==='future'?shoeFuture:'<span style="width:5px;height:5px;border-radius:50%;background:#E3E0DA"></span>'}
+          </div>
+          <span class="day" style="${r.today?'color:var(--org)':''}">${r.label}</span>
+        </div>`).join('')}
+      </div>
+      <p class="mutetext" style="margin-top:14px;font-size:12.5px">
+        ${sw>0?`🔥 ${sw}주째 루틴이 이어지고 있어요.`:'이번 주 첫 도장을 찍어볼까요?'}
+      </p>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h2>${d.getMonth()+1}월 추이</h2>
+      <p class="mutetext" style="font-size:12.5px">주차별 도착 횟수</p>
+      <div class="bars">
+        ${bars.map(b=>`<div class="bar">
+          <b>${b.c}</b>
+          <i class="${b.c===0?'zero':''}" style="height:${b.c===0?4:Math.round(b.c/mx*88)+8}px"></i>
+          <span>${b.w}주차</span></div>`).join('')}
+      </div>
+    </div>`;
+}
+
+/* ── 설정 ── */
+function viewSettings(){
+  const R=DB.routine;
+  const dayChips = DAYS.map((n,i)=>`<button class="chip ${R.days.includes(i)?'on':''}" onclick="toggleDay(${i})">${n}</button>`).join('');
+  const hourOpts = Array.from({length:24},(_,h)=>`<option value="${h}" ${h===R.hour?'selected':''}>${pad2(h)}시</option>`).join('');
+  const minOpts  = Array.from({length:12},(_,i)=>{const m2=i*5;return `<option value="${m2}" ${m2===R.minute?'selected':''}>${pad2(m2)}분</option>`;}).join('');
+  const notifOn = 'Notification' in window && Notification.permission==='granted';
+  return `
+    <h1 style="margin-bottom:18px">설정</h1>
+    <div class="field"><label>목표 요일</label>
+      <div style="display:flex;gap:7px;justify-content:space-between">${dayChips}</div></div>
+    <div class="field"><label>운동 시간</label>
+      <div class="timesel">
+        <select onchange="DB.routine.hour=+this.value;save();">${hourOpts}</select>
+        <select onchange="DB.routine.minute=+this.value;save();">${minOpts}</select>
+      </div></div>
+    <div class="field"><label>최소 목표 — 바쁜 주엔 이만큼만 가도 루틴은 살아있어요</label>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="mutetext">주</span>
+        <input class="numin" type="number" min="0" max="7" value="${R.minWeek}"
+          onchange="DB.routine.minWeek=Math.min(7,Math.max(0,+this.value||0));this.value=DB.routine.minWeek;save();render();">
+        <span class="mutetext">회</span></div></div>
+    <div class="field"><label>운동 장소</label>
+      <input class="txtin" placeholder="예: 리듬짐 강남점" value="${esc(R.gymName)}"
+        onchange="DB.routine.gymName=this.value;save();">
+      <button class="pill ghost" style="margin-top:8px" onclick="regGym()">
+        ${R.gymLat!=null?'✓ 위치 등록됨 · 현재 위치로 다시 등록':'현재 위치를 운동 장소로 등록'}</button>
+      <p class="mutetext" style="font-size:12px;margin-top:6px">위치 정보는 도착 확인 목적으로만 사용돼요.</p></div>
+
+    <div class="setrow" onclick="askNotif()">
+      <div>알림<small>${notifOn?'허용됨 · 30분/20분 전에 알려드려요':'탭해서 허용하기'}</small></div>
+      <span style="color:${notifOn?'var(--ok)':'var(--faint)'}">${notifOn?'ON':'OFF'}</span></div>
+
+    <div class="dbg">
+      <p class="mutetext" style="font-weight:700;font-size:12px;margin-bottom:4px">🧪 테스트 도구 (배포 전 확인용)</p>
+      <button onclick="jumpTo(30)">지금을 목표 30분 전으로</button>
+      <button onclick="jumpTo(19)">지금을 목표 20분 전으로 (19분)</button>
+      <button onclick="UI.debugMin=0;render()">시간 원래대로</button>
+      <button onclick="UI.demoArrive=!UI.demoArrive;render()">도착 시뮬레이션: ${UI.demoArrive?'ON':'OFF'}</button>
+      <button onclick="delete DB.missions[tKey()];save();render()">오늘 기록 초기화</button>
+      <button style="color:#E24B4A" onclick="if(confirm('모든 데이터를 지울까요?')){DB={onboarded:false,goal:{type:'routine',text:'주 3회가 자연스러운 나',targetDate:null},routine:{days:[1,3,5],hour:19,minute:30,minWeek:1,gymName:'',gymLat:null,gymLng:null},missions:{},extras:{}};save();render();}">전체 초기화</button>
+    </div>`;
+}
+function toggleDay(i){ const a=DB.routine.days;
+  a.includes(i)?a.splice(a.indexOf(i),1):a.push(i); save(); render(); }
+async function regGym(){ try{ const c=await getPos();
+  DB.routine.gymLat=c.latitude; DB.routine.gymLng=c.longitude; save(); render();
+  showBanner('운동 장소가 등록됐어요.'); }catch(e){ showBanner('위치 권한을 허용해주세요.'); } }
+function jumpTo(min){
+  if(!isTarget(tKey(),now())) DB.extras[key(new Date())]=true;
+  const real=new Date(); const tgt=targetOf(real);
+  const remReal=(tgt-real)/60000;
+  UI.debugMin = remReal - min; UI.notif={};
+  save(); UI.view='home'; render();
+}
+
+/* ── 온보딩 ── */
+function viewOnboard(){
+  if(!UI.ob) UI.ob={goal:1, days:[1,3,5], hour:19, minute:30, minWeek:1, gymName:''};
+  const o=UI.ob;
+  if(UI.obStep===1){
+    const goals=[['routine','루틴의 변화','주 3회가 자연스러운 나'],
+                 ['body','몸의 변화','4주 뒤, 달라진 몸'],
+                 ['mood','기분의 변화','운동 끝의 개운함을 아는 나']];
+    return `<div class="page" style="padding-top:44px">
+      <p class="eyebrow">Re:Deum</p>
+      <h1 style="margin:8px 0 4px">4주 뒤, 어떤 변화를<br>보고 싶으세요?</h1>
+      <p class="mutetext" style="margin-bottom:22px">하나만 골라요. 목표가 둘이면 행동은 없어져요.</p>
+      ${goals.map((g,i)=>`<div class="obcard ${o.goal===i+1?'on':''}" onclick="UI.ob.goal=${i+1};render()">
+        <b>${g[1]}</b><p class="mutetext" style="font-size:13px">${g[2]}</p></div>`).join('')}
+      <button class="pill" style="margin-top:14px" onclick="UI.obStep=2;render()">이 목표로 시작하기</button></div>`;
+  }
+  if(UI.obStep===2){
+    const dayChips=DAYS.map((n,i)=>`<button class="chip ${o.days.includes(i)?'on':''}"
+      onclick="const a=UI.ob.days;a.includes(${i})?a.splice(a.indexOf(${i}),1):a.push(${i});render()">${n}</button>`).join('');
+    const hourOpts=Array.from({length:24},(_,h)=>`<option value="${h}" ${h===o.hour?'selected':''}>${pad2(h)}시</option>`).join('');
+    const minOpts=Array.from({length:12},(_,i)=>{const m2=i*5;return `<option value="${m2}" ${m2===o.minute?'selected':''}>${pad2(m2)}분</option>`;}).join('');
+    return `<div class="page" style="padding-top:44px">
+      <h1 style="margin-bottom:4px">언제, 몇 시에 갈까요?</h1>
+      <p class="mutetext" style="margin-bottom:22px">'언제'를 정해두면 몸이 기억해요.</p>
+      <div class="field"><label>목표 요일</label>
+        <div style="display:flex;gap:7px;justify-content:space-between">${dayChips}</div></div>
+      <div class="field"><label>운동 시간</label>
+        <div class="timesel">
+          <select onchange="UI.ob.hour=+this.value">${hourOpts}</select>
+          <select onchange="UI.ob.minute=+this.value">${minOpts}</select></div></div>
+      <div class="field"><label>최소 목표 — 바쁜 주에도 이것만은</label>
+        <div style="display:flex;align-items:center;gap:10px"><span class="mutetext">주</span>
+        <input class="numin" type="number" min="0" max="7" value="${o.minWeek}"
+          onchange="UI.ob.minWeek=Math.min(7,Math.max(0,+this.value||0));this.value=UI.ob.minWeek">
+        <span class="mutetext">회</span></div></div>
+      <button class="pill" ${o.days.length?'':'disabled'} onclick="UI.obStep=3;render()">다음</button></div>`;
+  }
+  return `<div class="page" style="padding-top:44px">
+    <h1 style="margin-bottom:4px">어디로 가나요?</h1>
+    <p class="mutetext" style="margin-bottom:22px">도착 체크인에 쓰여요. 지금 건너뛰고<br>운동 장소에 도착했을 때 등록해도 돼요.</p>
+    <div class="field"><label>운동 장소 이름</label>
+      <input class="txtin" placeholder="예: 리듬짐 강남점" value="${esc(UI.ob.gymName)}"
+        oninput="UI.ob.gymName=this.value"></div>
+    <button class="pill ghost" onclick="obGym()">지금 이 위치를 운동 장소로 등록</button>
+    <p class="mutetext" style="font-size:12px;margin:8px 0 20px">위치 정보는 도착 확인 목적으로만 사용돼요.</p>
+    <button class="pill" onclick="finishOb()">시작하기</button>
+    <button class="linkbtn" style="display:block;margin:8px auto 0" onclick="finishOb()">위치는 나중에 등록할게요</button></div>`;
+}
+async function obGym(){ try{ const c=await getPos();
+  UI.ob.gymLat=c.latitude; UI.ob.gymLng=c.longitude;
+  alert('현재 위치가 운동 장소로 등록됐어요.'); }catch(e){ alert('위치 권한을 허용해주세요.'); } }
+function finishOb(){
+  const o=UI.ob, gt=['','주 3회가 자연스러운 나','4주 뒤, 달라진 몸','운동 끝의 개운함을 아는 나'][o.goal];
+  const td=new Date(); td.setDate(td.getDate()+28);
+  DB.goal={type:o.goal, text:gt, targetDate:key(td)};
+  DB.routine={days:o.days, hour:o.hour, minute:o.minute, minWeek:o.minWeek,
+    gymName:o.gymName||'', gymLat:o.gymLat??null, gymLng:o.gymLng??null};
+  DB.onboarded=true; save(); askNotif(); UI.view='home'; render();
+}
+function bindOnboard(){}
+
+/* ═══════════════ 부트 ═══════════════ */
+window.go=go; window.askNotif=askNotif; window.startShoe=startShoe;
+window.onPhotoFile=onPhotoFile; window.departed=departed; window.checkMove=checkMove;
+window.checkArrive=checkArrive; window.reschedule=reschedule; window.addTodayTarget=addTodayTarget;
+window.toggleDay=toggleDay; window.regGym=regGym; window.jumpTo=jumpTo;
+window.obGym=obGym; window.finishOb=finishOb;
+
+(async ()=>{
+  const saved=await store.get('redeum:v1');
+  if(saved) DB=Object.assign(DB,saved);
+  render();
+  setInterval(tick,1000);
+})();
+</script>
+</body>
+</html>

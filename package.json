@@ -1,0 +1,9 @@
+{
+  "name": "redeum-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Re:Deum — 운동 전 30분, 멈춘 사람을 움직이는 서비스",
+  "scripts": {
+    "build": "echo 'static site, no build needed'"
+  }
+}
